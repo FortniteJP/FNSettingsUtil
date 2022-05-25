@@ -4,10 +4,10 @@
     {
         public string TypeName { get; internal set; }
         public virtual object Value { get; protected set; }
-        protected int Size { get; set; }
-        protected internal int ArrayIndex { get; set; }
-        protected bool HasPropertyGuid { get; set; }
-        protected string Guid { get; set; }
+        public int Size { get; internal set; }
+        public int ArrayIndex { get; internal set; }
+        public bool HasPropertyGuid { get; internal set; }
+        public string Guid { get; internal set; }
 
         public virtual void Deserialize(UBinaryReader reader)
         {

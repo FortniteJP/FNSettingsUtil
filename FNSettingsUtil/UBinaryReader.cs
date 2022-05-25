@@ -6,7 +6,7 @@ namespace FNSettingsUtil
     {
         public UBinaryReader(Stream stream) : base(stream) { }
 
-        public string ReadBytesToString(int count) => BitConverter.ToString(this.ReadBytes(count)).Replace("-", "");
+        //public string ReadBytesToString(int count) => BitConverter.ToString(this.ReadBytes(count)).Replace("-", "");
         public string ReadGuid() => Read<Guid>().ToString();
         public float ReadSingle() => Read<float>();
         public short ReadInt16() => Read<short>();

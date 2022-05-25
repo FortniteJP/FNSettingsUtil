@@ -9,17 +9,22 @@ namespace FNSettingsUtil
 
         private const uint ClientSettingsMagic = 0x44464345;
 
-        public static async Task<FortniteSettings> GetClientSettingsAsync(Stream stream)
+        public static async Task<FortniteSettings> DeserializeClientSettingsAsync(Stream stream)
         {
             _binaryReader = new UBinaryReader(stream);
             await Decompress();
             return new FortniteSettings(_binaryReader);
         }
 
-        public static Task<FortniteSettings> GetClientSettingsAsync(string fileName)
+        public static Task<FortniteSettings> DeserializeClientSettingsAsync(string fileName)
         {
             var stream = new FileStream(fileName, FileMode.Open);
-            return GetClientSettingsAsync(stream);
+            return DeserializeClientSettingsAsync(stream);
+        }
+
+        public static async Task<Stream> SerializeClientSettingsAsync(FortniteSettings settings)
+        {
+            throw new NotImplementedException();
         }
 
         private static async Task Decompress()
@@ -45,11 +50,10 @@ namespace FNSettingsUtil
 
             await inflaterStream.CopyToAsync(decompressedStream);
             decompressedStream.Seek(0, SeekOrigin.Begin);
-            await decompressedStream.CopyToAsync(File.OpenWrite("Data/RawStream"));
-            decompressedStream.Seek(0, SeekOrigin.Begin);
+            //await decompressedStream.CopyToAsync(File.OpenWrite("Data/RawStream"));
+            //decompressedStream.Seek(0, SeekOrigin.Begin);
 
             _binaryReader = new UBinaryReader(decompressedStream);
         }
-
     }
 }
