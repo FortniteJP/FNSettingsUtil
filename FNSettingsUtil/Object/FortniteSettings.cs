@@ -54,7 +54,7 @@
 
         public FortniteSettingsHeader(UBinaryReader reader)
         {
-            Unknown1 = reader.ReadBytes(HEADER_BLOCK_SIZE); // 18 + 4 = 22; old is 18 what is the added 4
+            Unknown1 = reader.ReadBytes(HEADER_BLOCK_SIZE); // 18 + 4 = 22; old is 18
             Branch = reader.ReadFString();
             Unknown2 = reader.ReadInt32();
             Unknown3 = reader.ReadByte();

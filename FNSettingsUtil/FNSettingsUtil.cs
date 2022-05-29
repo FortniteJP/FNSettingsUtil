@@ -73,6 +73,9 @@ namespace FNSettingsUtil
 
         private static async Task Compress(FortniteSettings settings)
         {
+            _binaryWriter.Seek(0, SeekOrigin.Begin);
+            await _binaryWriter._stream.CopyToAsync(File.Open("Data/RawCompressed", FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read));
+            _binaryWriter.Seek(0, SeekOrigin.Begin);
             _binaryWriter.WriteSettings(settings);
 
             await CompressData();
