@@ -1,4 +1,7 @@
-﻿namespace FNSettingsUtil
+﻿using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
+
+namespace FNSettingsUtil
 {
     public abstract class UProperty
     {
@@ -36,6 +39,33 @@
         {
             Value = reader.ReadBytes(Size);
         }
+
+        protected internal virtual void Serialize(UBinaryWriter writer)
+        {
+            SerializeTypeInfo(writer);
+            SerializeProperty(writer);
+        }
+
+        protected internal virtual void SerializeTypeInfo(UBinaryWriter writer)
+        {
+            writer.WriteFString(TypeName);
+
+            writer.Write(Size);
+            writer.Write(ArrayIndex);
+            writer.Write(HasPropertyGuid);
+
+            if (HasPropertyGuid)
+            {
+                throw new NotImplementedException("HasPropertyGuid");
+            }
+        }
+
+        protected internal virtual void SerializeProperty(UBinaryWriter writer)
+        {
+            //new BinaryFormatter().Serialize(stream, Value);
+            var x = Value?.ToString();
+            if (x is not null) writer.WriteFString(x);
+        }
     }
 
     public class UStruct : UProperty
@@ -50,7 +80,13 @@
 
     public class FArrayProperty : UProperty
     {
-        private string _innerType;
+        internal string _innerType;
+        internal string innerTypeName;
+        internal FStructProperty fStructProperty;
+        internal string _settingName;
+        internal string _typeName;
+        internal UProperty _property;
+        public new List<UProperty> Value { get; protected set; }
 
         protected internal override void PreDeserializeProperty(UBinaryReader reader) => _innerType = reader.ReadFString();
 
@@ -60,20 +96,21 @@
 
             int count = reader.ReadInt32();
 
-            string innerTypeName = null;
+            innerTypeName = null;
 
             if (_innerType == "StructProperty")
             {
-                string settingName = reader.ReadFString();
-                string typeName = reader.ReadFString();
+                _settingName = reader.ReadFString();
+                _typeName = reader.ReadFString();
 
-                UProperty property = UTypes.GetPropertyByName(_innerType);
-                property.DeserializeTypeInfo(reader);
+                _property = UTypes.GetPropertyByName(_innerType);
+                _property.DeserializeTypeInfo(reader);
 
-                innerTypeName = property.TypeName;
+                innerTypeName = _property.TypeName;
 
-                if (property is FStructProperty structProperty)
+                if (_property is FStructProperty structProperty)
                 {
+                    fStructProperty = structProperty;
                     if (UTypes.HasPropertyName(structProperty._structName))
                     {
                         innerTypeName = structProperty._structName;
@@ -92,6 +129,32 @@
             }
 
             Value = items;
+        }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            writer.WriteFString(_innerType);
+
+            writer.Write(Value.Count);
+            if (_innerType == "StructProperty")
+            {
+                writer.WriteFString(_settingName);
+                writer.WriteFString(_typeName);
+
+                _property.Serialize(writer);
+                /*stream.Write(BitConverter.GetBytes(_property.Size));
+                stream.Write(BitConverter.GetBytes(_property.ArrayIndex));
+                stream.Write(BitConverter.GetBytes(_property.Value.HasPropertyGuid));
+                if (_property is FStructProperty _structProperty)
+                {
+                    _structProperty
+                }*/
+
+                foreach (var item in Value)
+                {
+                    item.Serialize(writer);
+                }
+            }
         }
     }
 
