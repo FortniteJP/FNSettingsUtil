@@ -4,29 +4,13 @@ using System.Text;
 
 namespace FNSettingsUtil
 {
-    public unsafe class UBinaryWriter
+    public class UBinaryWriter : GenericWriter.GenericStreamWriter
     {
-        //private byte[] Bytes = new byte[] { };
-        private MemoryStream _stream = new();
-        public readonly FortniteSettings settings;
+        internal MemoryStream _stream = new();
 
-        public UBinaryWriter(FortniteSettings settings)
+        public UBinaryWriter(MemoryStream stream) : base(stream)
         {
-            this.settings = settings;
-        }
-
-        /*[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write<T>(T value) where T : unmanaged
-        {
-            var buffer = Bytes.Last();
-            Unsafe.WriteUnaligned<T>(ref buffer, value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write<T>(T value, int offset, SeekOrigin origin = SeekOrigin.Current) where T : unmanaged
-        {
-            var buffer = Bytes[offset];
-            Unsafe.WriteUnaligned<T>(ref buffer, value);
+            this._stream = stream;
         }
 
         public void WriteGuid(Guid value) => Write(value);
@@ -34,53 +18,73 @@ namespace FNSettingsUtil
         public void WriteInt16(short value) => Write(value);
         public void WriteInt32(int value) => Write(value);
         public void WriteInt64(long value) => Write(value);
-        public void WriteUInt32(uint value) => Write(value);*/
+        public void WriteUInt32(uint value) => Write(value);
 
-        public void WriteSettings()
+        public void WriteSettings(FortniteSettings settings)
         {
-            _stream.Write(settings.Header.Unknown1);
-            _stream.Write(BitConverter.GetBytes(settings.Header.Branch.Length));
-            _stream.Write(Encoding.UTF8.GetBytes(settings.Header.Branch));
-            _stream.Write(BitConverter.GetBytes(settings.Header.Unknown2));
-            _stream.WriteByte(settings.Header.Unknown3);
-            _stream.WriteByte(settings.Header.Unknown4);
+            WriteBytes(settings.Header.Unknown1);
+            Write(settings.Header.Branch.Length);
+            WriteFString(settings.Header.Branch);
+            Write(settings.Header.Unknown2);
+            Write(settings.Header.Unknown3);
+            Write(settings.Header.Unknown4);
 
-            _stream.Write(BitConverter.GetBytes(settings.Guids.Count));
+            Write(settings.Guids.Count);
             foreach (var guid in settings.Guids)
             {
-                _stream.Write(BitConverter.GetBytes(guid.A));
-                _stream.Write(BitConverter.GetBytes(guid.B));
-                _stream.Write(BitConverter.GetBytes(guid.C));
-                _stream.Write(BitConverter.GetBytes(guid.D));
-                _stream.Seek(4, SeekOrigin.Current);
+                Write(guid);
+                Seek(4, SeekOrigin.Current);
             }
 
             foreach (var property in settings.Properties)
             {
-                _stream.Write(BitConverter.GetBytes(property.Key.Length));
+                WriteFString(property.Key);
+                property.Value.SerializeProperty(this);
+                /*_stream.Write(BitConverter.GetBytes(property.Key.Length));
                 _stream.Write(Encoding.UTF8.GetBytes(property.Key));
 
                 switch (property.Value)
                 {
-                    case UStruct uStruct:
+                    case FArrayProperty fArrayProperty:
+                        _stream.Write(BitConverter.GetBytes(fArrayProperty._innerType.Length));
+                        _stream.Write(Encoding.UTF8.GetBytes(fArrayProperty._innerType));
 
+                        _stream.Write(BitConverter.GetBytes(fArrayProperty.Value.Count));
+                        if (fArrayProperty._innerType == "StructProperty")
+                        {
+                            _stream.Write(BitConverter.GetBytes(fArrayProperty._settingName.Length));
+                            _stream.Write(Encoding.UTF8.GetBytes(fArrayProperty._settingName));
+                            _stream.Write(BitConverter.GetBytes(fArrayProperty._typeName.Length));
+                            _stream.Write(Encoding.UTF8.GetBytes(fArrayProperty._typeName));
+
+                            _stream.Write(BitConverter.GetBytes(fArrayProperty._property.Size));
+                            _stream.Write(BitConverter.GetBytes(fArrayProperty._property.ArrayIndex));
+                            _stream.Write(BitConverter.GetBytes(property.Value.HasPropertyGuid));
+                            if (fArrayProperty._property is FStructProperty)
+                            {
+                                fArrayProperty._property
+                            }
+                        }
+                        break;
+                    case UStruct uStruct:
+                    //_stream.Write(BitConverter.uStruct.Value);
                     default:
                         throw new NotImplementedException("No property type specified.");
-                        _stream.Write(BitConverter.GetBytes(property.Value.Size));
-                        _stream.Write(BitConverter.GetBytes(property.Value.ArrayIndex));
-                        _stream.Write(BitConverter.GetBytes(property.Value.HasPropertyGuid));
+                        //_stream.Write(BitConverter.GetBytes(property.Value.Size));
+                        //_stream.Write(BitConverter.GetBytes(property.Value.ArrayIndex));
+                        //_stream.Write(BitConverter.GetBytes(property.Value.HasPropertyGuid));
 
-                        if (property.Value.HasPropertyGuid)
-                        {
-                            throw new NotImplementedException("HasPropertyGuid is not implemented.");
-                            //var guid = property.Value.Guid.Split('-'); // is this correct?
-                            //_stream.Write(Encoding.UTF8.GetBytes(guid[0]));
-                        }
+                        //if (property.Value.HasPropertyGuid)
+                        //{
+                        //throw new NotImplementedException("HasPropertyGuid is not implemented.");
+                        //var guid = property.Value.Guid.Split('-'); // is this correct?
+                        //_stream.Write(Encoding.UTF8.GetBytes(guid[0]));
+                        //}
 
                         //_stream.Write(property.Value.Value);
 
-                        break;
-                };
+                        //break;
+                };*/
             }
         }
     }

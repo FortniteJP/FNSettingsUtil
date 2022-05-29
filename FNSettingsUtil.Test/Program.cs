@@ -16,10 +16,23 @@ namespace Program
             foreach (var prop in settings.Properties)
             {
                 var x = $"[{(prop.Value.HasPropertyGuid ? prop.Value.Guid : "None")}]{prop.Key}: {prop.Value.Value}\n";
-                Console.WriteLine(x);
+                Console.Write(x);
                 r += x;
             }
             File.WriteAllText("Data/Parsed.txt", r);
+
+            var file = File.OpenWrite("Data/Compressed.Sav");
+            var compressed = await FNSettingsUtil.FNSettingsUtil.SerializeClientSettingsAsync(settings);
+            Console.WriteLine(compressed.Length);
+            compressed.Position = 0;
+            byte[] buf = new byte[4096];
+
+            while (true)
+            {
+                int read = await compressed.ReadAsync(buf, 0, buf.Length);
+                if (read == 0) break;
+                await file.WriteAsync(buf, 0, read);
+            }
         }
     }
 }

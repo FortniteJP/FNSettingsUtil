@@ -4,7 +4,11 @@ namespace FNSettingsUtil
 {
     public class UBinaryReader : GenericStreamReader
     {
-        public UBinaryReader(Stream stream) : base(stream) { }
+        internal Stream stream;
+        public UBinaryReader(Stream stream) : base(stream)
+        {
+            this.stream = stream;
+        }
 
         //public string ReadBytesToString(int count) => BitConverter.ToString(this.ReadBytes(count)).Replace("-", "");
         public string ReadGuid() => Read<Guid>().ToString();

@@ -1,11 +1,13 @@
 ﻿using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using FNSettingsUtil.Object;
+using System.IO.Compression;
 
 namespace FNSettingsUtil
 {
     public class FNSettingsUtil
     {
         private static UBinaryReader _binaryReader;
+        private static UBinaryWriter _binaryWriter;
 
         private const uint ClientSettingsMagic = 0x44464345;
 
@@ -22,9 +24,11 @@ namespace FNSettingsUtil
             return DeserializeClientSettingsAsync(stream);
         }
 
-        public static async Task<Stream> SerializeClientSettingsAsync(FortniteSettings settings)
+        public static async Task<MemoryStream> SerializeClientSettingsAsync(FortniteSettings settings)
         {
-            throw new NotImplementedException();
+            _binaryWriter = new UBinaryWriter(new());
+            await Compress(settings);
+            return _binaryWriter._stream;
         }
 
         private static async Task Decompress()
@@ -43,6 +47,7 @@ namespace FNSettingsUtil
 
         private static async Task DecompressData(byte[] data, int length)
         {
+            //Console.WriteLine(BitConverter.ToString(data[0..2]));
             var decompressedStream = new MemoryStream(length);
 
             await using var compressedStream = new MemoryStream(data);
@@ -54,6 +59,48 @@ namespace FNSettingsUtil
             //decompressedStream.Seek(0, SeekOrigin.Begin);
 
             _binaryReader = new UBinaryReader(decompressedStream);
+
+            /*var compressedStream = new MemoryStream(data);
+            var ds = new DeflateStream(compressedStream, CompressionMode.Decompress);
+
+            var decompressedStream = new MemoryStream(length);
+
+            await ds.CopyToAsync(decompressedStream);
+            compressedStream.Close();
+            ds.Close();
+            _binaryReader = new UBinaryReader(decompressedStream);*/
+        }
+
+        private static async Task Compress(FortniteSettings settings)
+        {
+            _binaryWriter.WriteSettings(settings);
+
+            await CompressData();
+
+            _binaryWriter.Seek(0, SeekOrigin.Begin);
+            _binaryWriter.Write(ClientSettingsMagic);
+            _binaryWriter.Seek(4, SeekOrigin.Current);
+
+            _binaryWriter.Write(true);
+
+            _binaryWriter.Write(_binaryReader.Size);
+        }
+
+        private static async Task CompressData()
+        {
+            var compressedStream = new MemoryStream();
+            var deflaterStream = new DeflaterOutputStream(compressedStream, new());
+
+            int mSize;
+            byte[] mWriteData = new byte[4096];
+            while ((mSize = _binaryWriter._stream.Read(mWriteData, 0, mWriteData.Length)) > 0)
+            {
+                deflaterStream.Write(mWriteData, 0, mSize);
+            }
+            deflaterStream.Finish();
+            compressedStream.Seek(0, SeekOrigin.Begin);
+
+            _binaryWriter = new UBinaryWriter(compressedStream);
         }
     }
 }
