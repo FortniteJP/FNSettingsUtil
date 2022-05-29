@@ -61,7 +61,7 @@ namespace GenericWriter
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte value)
         {
-            WriteBytes(new byte[] { value }, 1);
+            WriteBytes(new byte[] { value });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
