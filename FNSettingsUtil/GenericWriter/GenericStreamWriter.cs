@@ -61,19 +61,19 @@ namespace GenericWriter
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte value)
         {
-            WriteBytes(new byte[] { value });
+            WriteBytes(new byte[1] { value });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte value, int offset, SeekOrigin origin = SeekOrigin.Current)
         {
-            WriteBytes(new byte[] { value }, offset, origin);
+            WriteBytes(new byte[1] { value }, offset, origin);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteBytes(byte[] value)
         {
-            _stream.Write(value, (int)_stream.Position, value.Length);
+            _stream.Write(value, 0, value.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

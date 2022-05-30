@@ -26,8 +26,8 @@ namespace FNSettingsUtil
             Write(settings.Header.Branch.Length);
             WriteFString(settings.Header.Branch);
             Write(settings.Header.Unknown2);
-            Write(settings.Header.Unknown3);
-            Write(settings.Header.Unknown4);
+            WriteByte(settings.Header.Unknown3);
+            WriteByte(settings.Header.Unknown4);
 
             Write(settings.Guids.Count);
             foreach (var guid in settings.Guids)
