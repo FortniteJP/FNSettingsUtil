@@ -75,6 +75,7 @@ namespace GenericWriter
         public void WriteBytes(byte[] value)
         {
             _stream.Write(value, 0, value.Length);
+            Console.WriteLine($"[{_stream.Length}] ({typeof(byte[])}){value} -> {BitConverter.ToString(value)}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

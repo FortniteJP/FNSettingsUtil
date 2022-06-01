@@ -22,7 +22,7 @@
             for (var i = 0; i < length; i++)
             {
                 var guid = reader.Read<FGuid>();
-                reader.Seek(4, SeekOrigin.Current);
+                //reader.Seek(4, SeekOrigin.Current);
 
                 guids.Add(guid);
             }
