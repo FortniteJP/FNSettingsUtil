@@ -55,28 +55,23 @@ namespace FNSettingsUtil
 
             await inflaterStream.CopyToAsync(decompressedStream);
             decompressedStream.Seek(0, SeekOrigin.Begin);
-            //await decompressedStream.CopyToAsync(File.OpenWrite("Data/RawStream"));
-            //decompressedStream.Seek(0, SeekOrigin.Begin);
+            var f = File.OpenWrite("Data/RawDecompressed");
+            await decompressedStream.CopyToAsync(f);
+            f.Close();
+            decompressedStream.Seek(0, SeekOrigin.Begin);
 
             _binaryReader = new UBinaryReader(decompressedStream);
-
-            /*var compressedStream = new MemoryStream(data);
-            var ds = new DeflateStream(compressedStream, CompressionMode.Decompress);
-
-            var decompressedStream = new MemoryStream(length);
-
-            await ds.CopyToAsync(decompressedStream);
-            compressedStream.Close();
-            ds.Close();
-            _binaryReader = new UBinaryReader(decompressedStream);*/
         }
 
         private static async Task Compress(FortniteSettings settings)
         {
-            _binaryWriter.Seek(0, SeekOrigin.Begin);
-            await _binaryWriter._stream.CopyToAsync(File.Open("Data/RawCompressed", FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read));
-            _binaryWriter.Seek(0, SeekOrigin.Begin);
             _binaryWriter.WriteSettings(settings);
+            _binaryWriter.Seek(0, SeekOrigin.Begin);
+            var f = File.OpenWrite("Data/RawCompressed");
+            _binaryWriter._stream.CopyTo(f);
+            f.Close();
+            _binaryWriter.Seek(0, SeekOrigin.Begin);
+            Console.WriteLine("x:" + _binaryWriter._stream.Length);
 
             await CompressData();
 
@@ -94,12 +89,13 @@ namespace FNSettingsUtil
             var compressedStream = new MemoryStream();
             var deflaterStream = new DeflaterOutputStream(compressedStream, new());
 
-            int mSize;
+            /*int mSize;
             byte[] mWriteData = new byte[4096];
             while ((mSize = _binaryWriter._stream.Read(mWriteData, 0, mWriteData.Length)) > 0)
             {
                 deflaterStream.Write(mWriteData, 0, mSize);
-            }
+            }*/
+            _binaryWriter._stream.CopyTo(deflaterStream);
             deflaterStream.Finish();
             compressedStream.Seek(0, SeekOrigin.Begin);
 
