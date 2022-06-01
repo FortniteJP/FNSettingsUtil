@@ -24,15 +24,8 @@ namespace Program
             var file = File.OpenWrite("Data/Compressed.Sav");
             var compressed = await FNSettingsUtil.FNSettingsUtil.SerializeClientSettingsAsync(settings);
             Console.WriteLine(compressed.Length);
-            compressed.Position = 0;
-            byte[] buf = new byte[4096];
-
-            while (true)
-            {
-                int read = await compressed.ReadAsync(buf, 0, buf.Length);
-                if (read == 0) break;
-                await file.WriteAsync(buf, 0, read);
-            }
+            compressed.Position = 0; await compressed.CopyToAsync(file);
+            file.Close();
         }
     }
 }
