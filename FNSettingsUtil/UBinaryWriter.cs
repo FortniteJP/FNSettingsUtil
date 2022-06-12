@@ -32,11 +32,22 @@ namespace FNSettingsUtil
                 Write(guid);
             }
 
-            /*foreach (var property in settings.Properties)
+            foreach (var property in settings.Properties)
             {
-                WriteFString(property.Key);
+                WriteFString(property.Key + "\0");
+                WriteFString(property.Value.TypeName + "\0");
                 property.Value.Serialize(this);
-            }*/
+            }
+        }
+
+        internal void WriteProperties(Dictionary<string, UProperty> properties)
+        {
+            foreach (var property in properties)
+            {
+                WriteFString(property.Key + "\0");
+                WriteFString(property.Value.TypeName + "\0");
+                property.Value.Serialize(this);
+            }
         }
     }
 }

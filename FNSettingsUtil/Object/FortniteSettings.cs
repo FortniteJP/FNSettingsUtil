@@ -33,7 +33,7 @@
 
     public class FortniteSettingsGuid
     {
-        public string Guid { get; set; }
+        public Guid Guid { get; set; }
         public int Value { get; set; }
 
         public FortniteSettingsGuid(UBinaryReader reader)
