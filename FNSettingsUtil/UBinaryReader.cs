@@ -11,7 +11,7 @@ namespace FNSettingsUtil
         }
 
         //public string ReadBytesToString(int count) => BitConverter.ToString(this.ReadBytes(count)).Replace("-", "");
-        public string ReadGuid() => Read<Guid>().ToString();
+        public Guid ReadGuid() => Read<Guid>();
         public float ReadSingle() => Read<float>();
         public short ReadInt16() => Read<short>();
         public int ReadInt32() => Read<int>();

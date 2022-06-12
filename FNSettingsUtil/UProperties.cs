@@ -10,7 +10,7 @@ namespace FNSettingsUtil
         public int Size { get; internal set; }
         public int ArrayIndex { get; internal set; }
         public bool HasPropertyGuid { get; internal set; }
-        public string Guid { get; internal set; }
+        public Guid Guid { get; internal set; }
 
         public virtual void Deserialize(UBinaryReader reader)
         {
@@ -46,17 +46,19 @@ namespace FNSettingsUtil
             SerializeProperty(writer);
         }
 
+        protected internal virtual void PreSerializeProperty(UBinaryWriter writer) { }
+
         protected internal virtual void SerializeTypeInfo(UBinaryWriter writer)
         {
-            writer.WriteFString(TypeName);
-
             writer.Write(Size);
             writer.Write(ArrayIndex);
-            writer.Write(HasPropertyGuid);
 
+            PreSerializeProperty(writer);
+
+            writer.Write(HasPropertyGuid);
             if (HasPropertyGuid)
             {
-                throw new NotImplementedException("HasPropertyGuid");
+                writer.Write(Guid);
             }
         }
 
@@ -64,7 +66,7 @@ namespace FNSettingsUtil
         {
             //new BinaryFormatter().Serialize(stream, Value);
             var x = Value?.ToString();
-            if (x is not null) writer.WriteFString(x);
+            if (x is not null) writer.WriteFString(x + "\0");
         }
     }
 
@@ -131,29 +133,22 @@ namespace FNSettingsUtil
             Value = items;
         }
 
+        protected internal override void PreSerializeProperty(UBinaryWriter writer) => writer.WriteFString(_innerType + "\0");
+
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
-            writer.WriteFString(_innerType);
-
             writer.Write(Value.Count);
             if (_innerType == "StructProperty")
             {
-                writer.WriteFString(_settingName);
-                writer.WriteFString(_typeName);
+                writer.WriteFString(_settingName + "\0");
+                writer.WriteFString(_typeName + "\0");
 
-                _property.Serialize(writer);
-                /*stream.Write(BitConverter.GetBytes(_property.Size));
-                stream.Write(BitConverter.GetBytes(_property.ArrayIndex));
-                stream.Write(BitConverter.GetBytes(_property.Value.HasPropertyGuid));
-                if (_property is FStructProperty _structProperty)
-                {
-                    _structProperty
-                }*/
+                _property.SerializeTypeInfo(writer);
+            }
 
-                foreach (var item in Value)
-                {
-                    item.Serialize(writer);
-                }
+            foreach (var item in Value)
+            {
+                item.SerializeProperty(writer);
             }
         }
     }
@@ -165,6 +160,13 @@ namespace FNSettingsUtil
         protected internal override void DeserializeProperty(UBinaryReader reader)
         {
             Value ??= reader.Read<bool>();
+        }
+
+        protected internal override void PreSerializeProperty(UBinaryWriter writer) => writer.Write((bool)Value);
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+
         }
     }
 
@@ -185,11 +187,27 @@ namespace FNSettingsUtil
                 Value = reader.ReadFString();
             }
         }
+
+        protected internal override void PreSerializeProperty(UBinaryWriter writer) => writer.WriteFString(Name + "\0");
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            if (Name == null || Name == "None")
+            {
+                writer.WriteByte((byte)Value);
+            }
+            else
+            {
+                writer.WriteFString((string)Value + "\0");
+            }
+        }
     }
 
     public class FDateTime : UStruct
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = new DateTime(reader.ReadInt64());
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write<long>(((DateTime)Value).ToBinary());
     }
 
     public class FEnumProperty : UProperty
@@ -204,6 +222,8 @@ namespace FNSettingsUtil
     public class FFloatProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadSingle();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((float)Value);
     }
 
     public class FFortActorRecord : UStruct
@@ -249,6 +269,23 @@ namespace FNSettingsUtil
                 UnknownExtraBytes = reader.ReadBytes((int)remainingBytes);
             }
         }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            writer.Write((Guid)Value);
+            writer.WriteByte((byte)(int)ActorState);
+            writer.WriteFString(ActorPath + "\0");
+
+            Rotation.SerializeProperty(writer);
+            Location.SerializeProperty(writer);
+            Scale.SerializeProperty(writer);
+
+            writer.Write(SpawnedActor ? 1 : 0);
+
+            writer.Write(PropertyByteSize);
+
+            writer.WriteBytes(UnknownExtraBytes);
+        }
     }
     public enum EFortBuildingPersistentState
     {
@@ -264,16 +301,22 @@ namespace FNSettingsUtil
     public class FGuid : UStruct
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadGuid();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((Guid)Value);
     }
 
     public class FInt16Property : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadInt16();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((short)Value);
     }
 
     public class FIntProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadInt32();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((int)Value);
     }
 
     public class FMapProperty : UProperty
@@ -316,16 +359,46 @@ namespace FNSettingsUtil
 
             Value = values;
         }
+
+        protected internal override void PreSerializeProperty(UBinaryWriter writer)
+        {
+            writer.WriteFString(_innerType + "\0");
+            writer.WriteFString(_valueType + "\0");
+        }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            var value = (Dictionary<UProperty, UProperty>)Value;
+            writer.Write(NumKeysToRemove);
+            writer.Write(value.Count);
+
+            var enumerator = value.GetEnumerator();
+            for (int i = 0; i < NumKeysToRemove; i++)
+            {
+                enumerator.MoveNext();
+                enumerator.Current.Key.SerializeProperty(writer);
+            }
+
+            while (enumerator.MoveNext())
+            {
+                enumerator.Current.Key.SerializeProperty(writer);
+                enumerator.Current.Value.SerializeProperty(writer);
+            }
+        }
     }
 
     public class FNameProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadFString();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteFString((string)Value + "\0");
     }
 
     public class FObjectProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadFString();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteFString((string)Value + "\0");
     }
 
     public class FQuat : UStruct
@@ -344,17 +417,27 @@ namespace FNSettingsUtil
 
             Value = $"X: {X}, Y: {Y}, Z: {Z}, W: {W}";
         }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            writer.Write(X);
+            writer.Write(Y);
+            writer.Write(Z);
+            writer.Write(W);
+        }
     }
 
     public class FStringProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadFString();
+        
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteFString((string)Value + "\0");
     }
 
     public class FStructProperty : UProperty
     {
         internal string _structName;
-        private string _structGuid;
+        private Guid _structGuid;
 
         protected internal override void PreDeserializeProperty(UBinaryReader reader)
         {
@@ -376,16 +459,38 @@ namespace FNSettingsUtil
                 Value = property;
             }
         }
+
+        protected internal override void PreSerializeProperty(UBinaryWriter writer)
+        {
+            writer.WriteFString(_structName + "\0");
+            writer.WriteGuid(_structGuid);
+        }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            if (_structName == null || !UTypes.HasPropertyName(_structName))
+            {
+                writer.WriteProperties((Dictionary<string, UProperty>)Value);
+            }
+            else
+            {
+                ((UProperty)Value).Serialize(writer);
+            }
+        }
     }
 
     public class FTextProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => base.DeserializeProperty(reader);
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => base.SerializeProperty(writer);
     }
 
     public class FUInt32Property : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadUInt32();
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((uint)Value);
     }
 
     public class FVector2D : UStruct
@@ -399,6 +504,12 @@ namespace FNSettingsUtil
             Y = reader.ReadSingle();
 
             Value = $"X: {X}, Y: {Y}";
+        }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            writer.Write(X);
+            writer.Write(Y);
         }
     }
 
@@ -415,6 +526,13 @@ namespace FNSettingsUtil
             Z = reader.ReadSingle();
 
             Value = $"X: {X}, Y: {Y}, Z: {Z}";
+        }
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            writer.Write(X);
+            writer.Write(Y);
+            writer.Write(Z);
         }
     }
 
@@ -449,6 +567,27 @@ namespace FNSettingsUtil
             }
 
             Value = items;
+        }
+
+        protected internal override void PreSerializeProperty(UBinaryWriter writer) => writer.WriteFString(_innerType + "\0");
+
+        protected internal override void SerializeProperty(UBinaryWriter writer)
+        {
+            var value = (List<UProperty>)Value;
+            writer.Write(NumKeysToRemove);
+            writer.Write(value.Count);
+
+            var enumerator = value.GetEnumerator();
+            for (int i = 0; i < NumKeysToRemove; i++)
+            {
+                enumerator.MoveNext();
+                enumerator.Current.SerializeProperty(writer);
+            }
+
+            while (enumerator.MoveNext())
+            {
+                enumerator.Current.SerializeProperty(writer);
+            }
         }
     }
 }
