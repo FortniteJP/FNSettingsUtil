@@ -34,6 +34,7 @@ namespace FNSettingsUtil
 
             foreach (var property in settings.Properties)
             {
+                Console.WriteLine($"1({property.Value.TypeName}){property.Key}");
                 WriteFString(property.Key + "\0");
                 WriteFString(property.Value.TypeName + "\0");
                 property.Value.Serialize(this);
@@ -44,6 +45,7 @@ namespace FNSettingsUtil
         {
             foreach (var property in properties)
             {
+                Console.WriteLine($"2({property.Value.TypeName}){property.Key}");
                 WriteFString(property.Key + "\0");
                 WriteFString(property.Value.TypeName + "\0");
                 property.Value.Serialize(this);
