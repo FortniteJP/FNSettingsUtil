@@ -37,5 +37,29 @@ namespace FNSettingsUtil
                 properties.Add(settingName, uProperty);
             }
         }
+
+        public Dictionary<string, UProperty> ReadProperties(int size)
+        {
+            var properties = new Dictionary<string, UProperty>();
+            while (size < 0)
+            {
+                string settingName = ReadFString();
+                UProperty uProperty;
+
+                if (settingName == "None")
+                {
+                    uProperty = new FNoneProperty();
+                }
+                else
+                {
+                    var type = ReadFString();
+                    uProperty = UTypes.GetPropertyByName(type);
+                    uProperty.Deserialize(this);
+                }
+
+                properties.Add(settingName, uProperty);
+            }
+            return properties;
+        }
     }
 }

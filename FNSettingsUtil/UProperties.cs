@@ -40,7 +40,7 @@ namespace FNSettingsUtil
             Value = reader.ReadBytes(Size);
         }
 
-        protected internal virtual void Serialize(UBinaryWriter writer)
+        public virtual void Serialize(UBinaryWriter writer)
         {
             SerializeTypeInfo(writer);
             SerializeProperty(writer);
@@ -78,6 +78,8 @@ namespace FNSettingsUtil
         }
 
         protected internal override void PreDeserializeProperty(UBinaryReader reader) { }
+
+        public override void Serialize(UBinaryWriter writer) => SerializeProperty(writer);
     }
 
     public class FArrayProperty : UProperty
@@ -207,7 +209,7 @@ namespace FNSettingsUtil
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = new DateTime(reader.ReadInt64());
 
-        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write<long>(((DateTime)Value).ToBinary());
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteInt64(((DateTime)Value).ToBinary());
     }
 
     public class FEnumProperty : UProperty
@@ -217,13 +219,17 @@ namespace FNSettingsUtil
         protected internal override void PreDeserializeProperty(UBinaryReader reader) => EnumName = reader.ReadFString();
 
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadFString();
+
+        protected internal override void PreSerializeProperty(UBinaryWriter writer) => writer.WriteFString(EnumName + "\0");
+
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteFString((string)Value + "\0");
     }
 
     public class FFloatProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadSingle();
 
-        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((float)Value);
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteSingle((float)Value);
     }
 
     public class FFortActorRecord : UStruct
@@ -239,6 +245,7 @@ namespace FNSettingsUtil
         public Dictionary<string, UProperty> ActorData { get; private set; }
 
         private byte[] UnknownExtraBytes;
+        private int UnknownInt32;
 
         protected internal override void DeserializeProperty(UBinaryReader reader)
         {
@@ -259,7 +266,7 @@ namespace FNSettingsUtil
             if (PropertyByteSize > 0)
             {
                 ActorData = reader.ReadProperties();
-                reader.ReadInt32();
+                UnknownInt32 = reader.ReadInt32();
             }
 
             long remainingBytes = PropertyByteSize - (reader.Position - currentPosition);
@@ -272,7 +279,7 @@ namespace FNSettingsUtil
 
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
-            writer.Write((Guid)Value);
+            writer.WriteGuid((Guid)Value);
             writer.WriteByte((byte)(int)ActorState);
             writer.WriteFString(ActorPath + "\0");
 
@@ -280,13 +287,20 @@ namespace FNSettingsUtil
             Location.SerializeProperty(writer);
             Scale.SerializeProperty(writer);
 
-            writer.Write(SpawnedActor ? 1 : 0);
+            writer.WriteInt32(SpawnedActor ? 1 : 0);
 
-            writer.Write(PropertyByteSize);
+            writer.WriteInt32(PropertyByteSize);
+
+            if (PropertyByteSize > 0)
+            {
+                writer.WriteProperties(ActorData);
+                writer.WriteInt32(UnknownInt32);
+            }
 
             writer.WriteBytes(UnknownExtraBytes);
         }
     }
+
     public enum EFortBuildingPersistentState
     {
         Default,
@@ -302,21 +316,21 @@ namespace FNSettingsUtil
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadGuid();
 
-        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((Guid)Value);
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteGuid((Guid)Value);
     }
 
     public class FInt16Property : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadInt16();
 
-        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((short)Value);
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteInt16((short)Value);
     }
 
     public class FIntProperty : UProperty
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadInt32();
 
-        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((int)Value);
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteInt32((int)Value);
     }
 
     public class FMapProperty : UProperty
@@ -369,8 +383,8 @@ namespace FNSettingsUtil
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
             var value = (Dictionary<UProperty, UProperty>)Value;
-            writer.Write(NumKeysToRemove);
-            writer.Write(value.Count);
+            writer.WriteInt32(NumKeysToRemove);
+            writer.WriteInt32(value.Count);
 
             var enumerator = value.GetEnumerator();
             for (int i = 0; i < NumKeysToRemove; i++)
@@ -420,10 +434,10 @@ namespace FNSettingsUtil
 
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
-            writer.Write(X);
-            writer.Write(Y);
-            writer.Write(Z);
-            writer.Write(W);
+            writer.WriteSingle(X);
+            writer.WriteSingle(Y);
+            writer.WriteSingle(Z);
+            writer.WriteSingle(W);
         }
     }
 
@@ -449,7 +463,7 @@ namespace FNSettingsUtil
         {
             if (_structName == null || !UTypes.HasPropertyName(_structName))
             {
-                Value = reader.ReadProperties();
+                Value = reader.ReadProperties(Size);
             }
             else
             {
@@ -490,7 +504,7 @@ namespace FNSettingsUtil
     {
         protected internal override void DeserializeProperty(UBinaryReader reader) => Value = reader.ReadUInt32();
 
-        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.Write((uint)Value);
+        protected internal override void SerializeProperty(UBinaryWriter writer) => writer.WriteUInt32((uint)Value);
     }
 
     public class FVector2D : UStruct
@@ -508,8 +522,8 @@ namespace FNSettingsUtil
 
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
-            writer.Write(X);
-            writer.Write(Y);
+            writer.WriteSingle(X);
+            writer.WriteSingle(Y);
         }
     }
 
@@ -530,9 +544,9 @@ namespace FNSettingsUtil
 
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
-            writer.Write(X);
-            writer.Write(Y);
-            writer.Write(Z);
+            writer.WriteSingle(X);
+            writer.WriteSingle(Y);
+            writer.WriteSingle(Z);
         }
     }
 
@@ -574,8 +588,8 @@ namespace FNSettingsUtil
         protected internal override void SerializeProperty(UBinaryWriter writer)
         {
             var value = (List<UProperty>)Value;
-            writer.Write(NumKeysToRemove);
-            writer.Write(value.Count);
+            writer.WriteInt32(NumKeysToRemove);
+            writer.WriteInt32(value.Count);
 
             var enumerator = value.GetEnumerator();
             for (int i = 0; i < NumKeysToRemove; i++)
@@ -589,5 +603,12 @@ namespace FNSettingsUtil
                 enumerator.Current.SerializeProperty(writer);
             }
         }
+    }
+
+    public class FNoneProperty : UProperty
+    {
+        public override void Deserialize(UBinaryReader reader) => Value = reader.ReadFString();
+
+        public override void Serialize(UBinaryWriter writer) => writer.WriteFString(Value + "\0");
     }
 }

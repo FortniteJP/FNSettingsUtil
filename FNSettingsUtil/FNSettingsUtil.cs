@@ -55,7 +55,7 @@ namespace FNSettingsUtil
 
             await inflaterStream.CopyToAsync(decompressedStream);
             decompressedStream.Seek(0, SeekOrigin.Begin);
-            var f = File.OpenWrite("Data/RawDecompressed");
+            var f = File.Open("Data/RawDecompressed", FileMode.Create, FileAccess.Write, FileShare.Read);
             await decompressedStream.CopyToAsync(f);
             f.Close();
             decompressedStream.Seek(0, SeekOrigin.Begin);
@@ -67,7 +67,7 @@ namespace FNSettingsUtil
         {
             _binaryWriter.WriteSettings(settings);
             _binaryWriter.Seek(0, SeekOrigin.Begin);
-            var f = File.OpenWrite("Data/RawCompressed");
+            var f = File.Open("Data/RawCompressed", FileMode.Create, FileAccess.Write, FileShare.Read);
             _binaryWriter._stream.CopyTo(f);
             f.Close();
             _binaryWriter.Seek(0, SeekOrigin.Begin);

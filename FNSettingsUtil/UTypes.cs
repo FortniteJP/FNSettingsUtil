@@ -22,7 +22,8 @@
             { "Vector2D", () => new FVector2D() },
             { "DateTime", () => new FDateTime() },
             { "Guid", () => new FGuid() },
-            { "FortActorRecord", () => new FFortActorRecord() }
+            { "FortActorRecord", () => new FFortActorRecord() },
+            { "None", () => new FNoneProperty() }
         };
 
         public static bool HasPropertyName(string name) => _types.ContainsKey(name);
