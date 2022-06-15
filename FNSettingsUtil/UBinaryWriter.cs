@@ -21,7 +21,7 @@ namespace FNSettingsUtil
         public void WriteSettings(FortniteSettings settings)
         {
             WriteBytes(settings.Header.Unknown1);
-            WriteFString(settings.Header.Branch + "\0");
+            WriteFString(settings.Header.Branch);
             Write(settings.Header.Unknown2);
             WriteByte(settings.Header.Unknown3);
             WriteByte(settings.Header.Unknown4);
@@ -35,9 +35,16 @@ namespace FNSettingsUtil
             foreach (var property in settings.Properties)
             {
                 Console.WriteLine($"1({property.Value.TypeName}){property.Key}");
-                WriteFString(property.Key + "\0");
-                WriteFString(property.Value.TypeName + "\0");
-                property.Value.Serialize(this);
+                if (property.Key.StartsWith("None"))
+                {
+                    WriteFString((string)property.Value.Value);
+                }
+                else
+                {
+                    WriteFString(property.Key);
+                    WriteFString(property.Value.TypeName);
+                    property.Value.Serialize(this);
+                }
             }
         }
 
@@ -46,9 +53,16 @@ namespace FNSettingsUtil
             foreach (var property in properties)
             {
                 Console.WriteLine($"2({property.Value.TypeName}){property.Key}");
-                WriteFString(property.Key + "\0");
-                WriteFString(property.Value.TypeName + "\0");
-                property.Value.Serialize(this);
+                if (property.Key.StartsWith("None"))
+                {
+                    WriteFString((string)property.Value.Value);
+                }
+                else
+                {
+                    WriteFString(property.Key);
+                    WriteFString(property.Value.TypeName);
+                    property.Value.Serialize(this);
+                }
             }
         }
     }

@@ -35,7 +35,7 @@ namespace GenericWriter
             Unsafe.WriteUnaligned<T>(ref buffer[0], value);
             _stream.Write(buffer, 0, size);
             //Console.WriteLine("a:"+_stream.Length);
-            Console.WriteLine($"[{_stream.Length}] ({typeof(T)}){value} -> {BitConverter.ToString(buffer)}");
+            //Console.WriteLine($"[{_stream.Length}] ({typeof(T)}){value} -> {BitConverter.ToString(buffer)}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -110,7 +110,7 @@ namespace GenericWriter
         public void WriteFString(string value)
         {
             // > 0 for ANSICHAR, < 0 for UCS2CHAR serialization
-            var v = Encoding.UTF8.GetBytes(value);
+            var v = Encoding.UTF8.GetBytes(value + "\0", 0, value.Length + 1);
             Write<int>(v.Length);
 
             if (value.Length == 0)
@@ -119,7 +119,7 @@ namespace GenericWriter
             }
             _stream.Write(v, 0, v.Length);
             //Console.WriteLine("b:"+_stream.Length);
-            Console.WriteLine($"[{_stream.Length}] ({typeof(string)}){value} -> {BitConverter.ToString(v)}");
+            //Console.WriteLine($"[{_stream.Length}] ({typeof(string)}){value} -> {BitConverter.ToString(v)}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
