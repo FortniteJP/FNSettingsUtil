@@ -25,41 +25,63 @@ namespace FNSettingsUtil
             {
                 string settingName = ReadFString();
 
-                if (settingName == "None")
+                if (settingName == "None" || string.IsNullOrEmpty(settingName))
                 {
                     return properties;
                 }
 
                 var type = ReadFString();
-                //Console.WriteLine($"\n{settingName} :\n{type}\n");
+                Console.WriteLine($"({type}){settingName}");
                 var uProperty = UTypes.GetPropertyByName(type);
                 uProperty.Deserialize(this);
                 properties.Add(settingName, uProperty);
             }
         }
 
-        public Dictionary<string, UProperty> ReadProperties(int size)
+        public Dictionary<string, UProperty> ReadPropertiesN()// => ReadProperties(); private object _()
         {
+            Guid _ = Guid.NewGuid();
             var properties = new Dictionary<string, UProperty>();
-            while (size < 0)
+            bool LNone = false;
+            int pos = (int)Position;
+            while (true)
             {
+                //Console.WriteLine($"[{_}]bpos: {Position}, {pos}");
                 string settingName = ReadFString();
+                //Console.WriteLine($"[{_}]apos: {Position}, {settingName}");
                 UProperty uProperty;
 
                 if (settingName == "None")
                 {
+                    LNone = true;
                     uProperty = new FNoneProperty();
+                    properties.Add(settingName + Position, uProperty);
+                }
+                else if (LNone)
+                {
+                    Seek(pos, SeekOrigin.Begin);
+                    Console.WriteLine($"[{_}]Last1: {Position}");
+                    return properties;
                 }
                 else
                 {
-                    var type = ReadFString();
-                    uProperty = UTypes.GetPropertyByName(type);
-                    uProperty.Deserialize(this);
+                    try
+                    {
+                        LNone = false;
+                        var type = ReadFString();
+                        uProperty = UTypes.GetPropertyByName(type);
+                        uProperty.Deserialize(this);
+                        properties.Add(settingName, uProperty);
+                    }
+                    catch (NotImplementedException ex)
+                    {
+                        Seek(pos, SeekOrigin.Begin);
+                        Console.WriteLine($"[{_}]Last2: {Position}");
+                        return properties;
+                    }
                 }
-
-                properties.Add(settingName, uProperty);
+                pos = (int)Position;
             }
-            return properties;
         }
     }
 }

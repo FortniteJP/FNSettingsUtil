@@ -21,6 +21,8 @@ namespace Program
             }
             File.WriteAllText("Data/Parsed.txt", r);
 
+            Console.ReadLine();
+
             var file = File.OpenWrite("Data/Compressed.Sav");
             var compressed = await FNSettingsUtil.FNSettingsUtil.SerializeClientSettingsAsync(settings);
             Console.WriteLine(compressed.Length);
