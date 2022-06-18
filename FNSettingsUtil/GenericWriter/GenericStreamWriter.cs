@@ -110,13 +110,22 @@ namespace GenericWriter
         public void WriteFString(string value)
         {
             // > 0 for ANSICHAR, < 0 for UCS2CHAR serialization
-            var v = Encoding.UTF8.GetBytes(value + "\0", 0, value.Length + 1);
-            Write<int>(v.Length);
 
             if (value.Length == 0)
             {
                 return;
             }
+
+            byte[] v;
+            if (Encoding.Default.GetBytes(value).Length != value.Length)
+            {
+                v = Encoding.Unicode.GetBytes(value + "\0", 0, value.Length + 1);
+            }
+            else
+            {
+                v = Encoding.UTF8.GetBytes(value + "\0", 0, value.Length + 1);
+            }
+            Write<int>(v.Length);
             _stream.Write(v, 0, v.Length);
             //Console.WriteLine("b:"+_stream.Length);
             //Console.WriteLine($"[{_stream.Length}] ({typeof(string)}){value} -> {BitConverter.ToString(v)}");
