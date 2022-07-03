@@ -120,12 +120,13 @@ namespace GenericWriter
             if (Encoding.Default.GetBytes(value).Length != value.Length)
             {
                 v = Encoding.Unicode.GetBytes(value + "\0", 0, value.Length + 1);
+                Write<int>((-value.Length) - 1);
             }
             else
             {
                 v = Encoding.UTF8.GetBytes(value + "\0", 0, value.Length + 1);
+                Write<int>(v.Length);
             }
-            Write<int>(v.Length);
             _stream.Write(v, 0, v.Length);
             //Console.WriteLine("b:"+_stream.Length);
             //Console.WriteLine($"[{_stream.Length}] ({typeof(string)}){value} -> {BitConverter.ToString(v)}");
