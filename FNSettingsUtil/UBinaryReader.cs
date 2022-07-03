@@ -4,6 +4,8 @@ namespace FNSettingsUtil
 {
     public class UBinaryReader : GenericStreamReader
     {
+        private static int n = 0;
+
         internal Stream stream;
         public UBinaryReader(Stream stream) : base(stream)
         {
@@ -41,6 +43,8 @@ namespace FNSettingsUtil
         public Dictionary<string, UProperty> ReadPropertiesN()// => ReadProperties(); private object _()
         {
             Guid _ = Guid.NewGuid();
+            n++;
+            Console.WriteLine($"{new(' ', n)}{new(' ', n)}[{_}]Start");
             var properties = new Dictionary<string, UProperty>();
             bool LNone = false;
             int pos = (int)Position;
@@ -51,17 +55,18 @@ namespace FNSettingsUtil
                 //Console.WriteLine($"[{_}]apos: {Position}, {settingName}");
                 UProperty uProperty;
 
-                if (settingName == "None")
+                if (LNone)
+                {
+                    Seek(pos, SeekOrigin.Begin);
+                    Console.WriteLine($"{new(' ', n)}{new(' ', n)}[{_}]Last1: {Position}");
+                    n--;
+                    return properties;
+                }
+                else if (settingName == "None")
                 {
                     LNone = true;
                     uProperty = new FNoneProperty();
                     properties.Add(settingName + Position, uProperty);
-                }
-                else if (LNone)
-                {
-                    Seek(pos, SeekOrigin.Begin);
-                    Console.WriteLine($"[{_}]Last1: {Position}");
-                    return properties;
                 }
                 else
                 {
@@ -76,7 +81,8 @@ namespace FNSettingsUtil
                     catch (NotImplementedException ex)
                     {
                         Seek(pos, SeekOrigin.Begin);
-                        Console.WriteLine($"[{_}]Last2: {Position}");
+                        Console.WriteLine($"{new(' ', n)}{new(' ', n)}[{_}]Last2: {Position}");
+                        n--;
                         return properties;
                     }
                 }

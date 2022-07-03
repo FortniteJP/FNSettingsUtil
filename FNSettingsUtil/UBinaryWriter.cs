@@ -46,6 +46,8 @@ namespace FNSettingsUtil
                     property.Value.Serialize(this);
                 }
             }
+
+            WriteBytes(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x4e, 0x6f, 0x6e, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00 });
         }
 
         internal void WriteProperties(Dictionary<string, UProperty> properties)
