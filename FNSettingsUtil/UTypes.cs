@@ -30,7 +30,7 @@
 
         public static UProperty GetPropertyByName(string name)
         {
-            if (!_types.TryGetValue(name, out Func<UProperty> propertyFunc))
+            if (!_types.TryGetValue(name, out Func<UProperty>? propertyFunc))
             {
                 //Console.WriteLine($"? {name}[{System.Text.Encoding.UTF8.GetBytes(name)}]");
                 throw new NotImplementedException($"Type {name} currently not implemented");
