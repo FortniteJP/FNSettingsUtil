@@ -4,6 +4,7 @@ using System.IO.Compression;
 
 namespace FNSettingsUtil
 {
+    #pragma warning disable CS8618, CS1998
     public class FNSettingsUtil
     {
         private static UBinaryReader _binaryReader;

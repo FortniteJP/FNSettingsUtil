@@ -78,7 +78,7 @@ namespace FNSettingsUtil
                         uProperty.Deserialize(this);
                         properties.Add(settingName, uProperty);
                     }
-                    catch (NotImplementedException ex)
+                    catch (NotImplementedException)
                     {
                         Seek(pos, SeekOrigin.Begin);
                         Console.WriteLine($"{new(' ', n)}{new(' ', n)}[{_}]Last2: {Position}");

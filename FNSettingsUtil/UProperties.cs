@@ -3,6 +3,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FNSettingsUtil
 {
+    #pragma warning disable CS8618
     public abstract class UProperty
     {
         public string TypeName { get; internal set; }
@@ -85,7 +86,7 @@ namespace FNSettingsUtil
     public class FArrayProperty : UProperty
     {
         internal string _innerType;
-        internal string innerTypeName;
+        internal string? innerTypeName;
         internal FStructProperty fStructProperty;
         internal string _settingName;
         internal string _typeName;
